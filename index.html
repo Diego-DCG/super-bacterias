@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investigación Científica: Resistencia Antimicrobiana</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --neon-green: #39FF14;
+            --neon-pink: #FF00FF;
+            --neon-purple: #8B00FF;
+            --neon-blue: #00FFFF;
+            --bg-dark: #050505;
+        }
+
+        * { box-sizing: border-box; cursor: crosshair; }
+
+        body {
+            background-color: #111;
+            margin: 0;
+            font-family: 'VT323', monospace;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-screen {
+            width: 1050px;
+            height: 650px;
+            background: var(--bg-dark);
+            border: 6px solid var(--neon-green);
+            position: relative;
+            box-shadow: 0 0 30px rgba(57, 255, 20, 0.4);
+            overflow: hidden;
+        }
+
+        .grid-bg {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background-image: 
+                linear-gradient(var(--neon-purple) 1px, transparent 1px),
+                linear-gradient(90deg, var(--neon-purple) 1px, transparent 1px);
+            background-size: 50px 50px;
+            opacity: 0.1;
+            transform: perspective(500px) rotateX(60deg);
+            z-index: 0;
+            animation: moveGrid 20s linear infinite;
+        }
+
+        @keyframes moveGrid {
+            from { transform: translateY(0); }
+            to { transform: translateY(50px); }
+        }
+
+        .slide {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            padding: 40px;
+            display: none;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .slide.active { display: flex; animation: fadeIn 0.4s steps(5); }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        h1, h2, h3 { font-family: 'Press Start 2P', cursive; color: var(--neon-green); text-align: center; }
+        h1 { font-size: 24px; text-shadow: 3px 3px var(--neon-purple); margin-bottom: 10px; }
+
+        .content-body {
+            background: rgba(0, 0, 0, 0.85);
+            border: 2px solid var(--neon-blue);
+            padding: 20px;
+            flex-grow: 1;
+            overflow-y: auto;
+            position: relative;
+            display: flex;
+            gap: 20px;
+        }
+
+        .text-section { flex: 1; padding-right: 10px; }
+        .visual-section { 
+            width: 380px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px; 
+            justify-content: center;
+            align-items: center;
+        }
+
+        .arcade-sprite-box {
+            width: 100%;
+            height: 280px;
+            border: 4px double var(--neon-purple);
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0 0 20px rgba(139, 0, 255, 0.3);
+            position: relative;
+        }
+
+        .sprite-icon {
+            font-size: 100px;
+            filter: drop-shadow(0 0 10px currentColor);
+            margin-bottom: 15px;
+        }
+
+        .sprite-label {
+            font-family: 'Press Start 2P';
+            font-size: 10px;
+            color: var(--neon-blue);
+        }
+
+        .scanline {
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            position: absolute;
+            top: 0;
+            animation: scanlineMove 4s linear infinite;
+        }
+
+        @keyframes scanlineMove {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+
+        .step-tag {
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: var(--neon-blue);
+            color: black;
+            padding: 2px 10px;
+            font-family: 'Press Start 2P';
+            font-size: 10px;
+            z-index: 20;
+        }
+
+        .interactive-element {
+            border: 2px solid var(--neon-green);
+            padding: 12px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 18px;
+            background: rgba(57, 255, 20, 0.05);
+        }
+
+        .interactive-element:hover {
+            background: rgba(57, 255, 20, 0.15);
+            transform: translateX(8px);
+        }
+
+        .info-popup {
+            display: none;
+            margin-top: 10px;
+            padding: 12px;
+            border-left: 4px solid var(--neon-pink);
+            background: rgba(255, 0, 255, 0.08);
+            font-size: 18px;
+            line-height: 1.3;
+        }
+
+        .nav-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+
+        .nav-btn {
+            font-family: 'Press Start 2P';
+            font-size: 10px;
+            background: transparent;
+            color: var(--neon-green);
+            border: 2px solid var(--neon-green);
+            padding: 12px 20px;
+            cursor: pointer;
+        }
+
+        .nav-btn:hover { background: var(--neon-green); color: black; }
+
+        .start-btn {
+            margin-top: 30px;
+            font-size: 18px;
+            padding: 20px 50px;
+            border: 4px solid var(--neon-pink);
+            color: var(--neon-pink);
+            background: rgba(255, 0, 255, 0.1);
+        }
+
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Press Start 2P';
+            font-size: 9px;
+            color: var(--neon-pink);
+            margin-bottom: 12px;
+        }
+
+        .stat-bar {
+            width: 100%;
+            height: 12px;
+            border: 1px solid white;
+            background: #222;
+            margin: 5px 0;
+        }
+
+        .stat-fill { height: 100%; background: var(--neon-green); width: 0%; transition: width 1s; }
+
+        strong { color: var(--neon-blue); }
+    </style>
+</head>
+<body>
+
+<div id="game-screen">
+    <div class="grid-bg"></div>
+
+    <!-- PORTADA -->
+    <div class="slide active" id="s1">
+        <div style="text-align: center; margin-top: 30px;">
+            <div style="font-size: 100px; color: var(--neon-green); margin-bottom: 20px;">
+                <i class="fas fa-ghost"></i>
+            </div>
+            <p style="font-family: 'Press Start 2P'; font-size: 12px; color: var(--neon-blue);">REPORTE ARCADE DE BIOLOGÍA</p>
+            <h1 style="font-size: 32px;">SUPERBACTERIAS ATTACK!</h1>
+            
+            <div style="margin-top: 30px; border: 4px double var(--neon-purple); display: inline-block; padding: 25px; background: rgba(0,0,0,0.7);">
+                <p style="font-size: 26px; margin: 0;">DIRECTOR: DIEGO GAMEZ CUMPLIDO</p>
+                <p style="font-size: 18px; color: var(--neon-blue); margin-top: 10px;">PRESS START TO RESEARCH</p>
+            </div>
+
+            <div style="display: block; margin-top: 50px;">
+                <button class="nav-btn start-btn" onclick="nextSlide()">
+                    INSERT COIN / START
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NIVEL 1: EL ENEMIGO -->
+    <div class="slide" id="s2">
+        <div class="hud"><span>NIVEL: 01_ORIGEN</span><span>HP: ||||||||||</span></div>
+        <h1>1. LAS SUPERBACTERIAS: THE BOSS</h1>
+        <div class="content-body">
+            <div class="step-tag"> DATA_LOG </div>
+            <div class="text-section">
+                <p style="font-size: 20px;">Imagina bacterias que han <strong>subido de nivel</strong>. Al usar antibióticos cuando no los necesitamos, las bacterias débiles mueren, pero las más fuertes sobreviven y se vuelven "Jefes Finales".</p>
+                
+                <div class="interactive-element" onclick="toggleInfo('obj1')">
+                    <i class="fas fa-shield-virus"></i><span>MECANISMOS DE DEFENSA</span>
+                </div>
+                <div id="obj1" class="info-popup">Las bacterias crean <strong>bombas de eflujo</strong> (expulsan el medicamento) o <strong>enzimas destructoras</strong> que rompen el antibiótico antes de que haga daño.</div>
+
+                <div class="interactive-element" onclick="toggleInfo('obj2')">
+                    <i class="fas fa-skull"></i><span>PELIGRO DE GAME OVER</span>
+                </div>
+                <div id="obj2" class="info-popup">Sin nuevos "ataques", cirugías simples o infecciones comunes (como una neumonía) podrían volverse incurables.</div>
+            </div>
+            <div class="visual-section">
+                <div class="arcade-sprite-box">
+                    <div class="scanline"></div>
+                    <i class="fas fa-virus-slash sprite-icon" style="color: var(--neon-green);"></i>
+                    <span class="sprite-label">[ SPRITE: BACTERIA_BOSS ]</span>
+                </div>
+            </div>
+        </div>
+        <div class="nav-controls"><button class="nav-btn" onclick="prevSlide()">BACK</button><button class="nav-btn" onclick="nextSlide()">NEXT LEVEL</button></div>
+    </div>
+
+    <!-- NIVEL 2: EVOLUCIÓN -->
+    <div class="slide" id="s3">
+        <div class="hud"><span>NIVEL: 02_GENES</span><span>XP: 2500</span></div>
+        <h1>2. POWER-UPS BACTERIANOS</h1>
+        <div class="content-body">
+            <div class="step-tag"> GENE_MOD </div>
+            <div class="text-section">
+                <p style="font-size: 20px;">Las bacterias no solo evolucionan al azar, ¡también se pasan los trucos entre ellas como si compartieran <strong>cartuchos de juego</strong>!</p>
+                
+                <div class="interactive-element" onclick="toggleInfo('met1')">
+                    <i class="fas fa-dna"></i><span>CÓDIGO DE RESISTENCIA</span>
+                </div>
+                <div id="met1" class="info-popup">Usan <strong>Plásmidos</strong>: pequeños discos de datos (ADN circular) que viajan de una bacteria a otra enseñándoles cómo ser resistentes.</div>
+
+                <div class="interactive-element" onclick="toggleInfo('met2')">
+                    <i class="fas fa-users"></i><span>COMUNIDAD BACTERIANA</span>
+                </div>
+                <div id="met2" class="info-popup">A esto se le llama <strong>Transferencia Horizontal de Genes</strong>. Una sola bacteria resistente puede entrenar a todo un grupo en poco tiempo.</div>
+            </div>
+            <div class="visual-section">
+                <div class="arcade-sprite-box">
+                    <div class="scanline"></div>
+                    <i class="fas fa-microchip sprite-icon" style="color: var(--neon-blue);"></i>
+                    <span class="sprite-label">[ SPRITE: GENE_CHIP ]</span>
+                </div>
+            </div>
+        </div>
+        <div class="nav-controls"><button class="nav-btn" onclick="prevSlide()">BACK</button><button class="nav-btn" onclick="nextSlide()">NEXT LEVEL</button></div>
+    </div>
+
+    <!-- NIVEL 3: EL FUTURO -->
+    <div class="slide" id="s4">
+        <div class="hud"><span>NIVEL: 03_FUTURE</span><span>DIFICULTAD: HARD</span></div>
+        <h1>3. EL MARCADOR FINAL: 2050</h1>
+        <div class="content-body">
+            <div class="step-tag"> SCORE_BOARD </div>
+            <div class="text-section">
+                <p>Nivel de Ineficacia de Antibióticos Actuales:</p>
+                <div class="stat-bar"><div id="bar-ineficacia" class="stat-fill"></div></div>
+                
+                <div class="interactive-element" onclick="toggleInfo('res1')">
+                    <i class="fas fa-biohazard"></i><span>ALERTA DE PANDEMIA</span>
+                </div>
+                <div id="res1" class="info-popup">Para el 2050, se estima que <strong>10 millones de personas</strong> podrían morir al año por infecciones resistentes, superando al cáncer.</div>
+
+                <div class="interactive-element" onclick="toggleInfo('res2')">
+                    <i class="fas fa-shield-alt"></i><span>TU ROL EN EL JUEGO</span>
+                </div>
+                <div id="res2" class="info-popup"><strong>¡No automedicarse!</strong> Tomar antibióticos solo cuando un médico lo diga y completar siempre el tratamiento para no dejar "bacterias heridas" que aprendan a defenderse.</div>
+            </div>
+            <div class="visual-section">
+                <div class="arcade-sprite-box">
+                    <div class="scanline"></div>
+                    <i class="fas fa-chart-line sprite-icon" style="color: var(--neon-pink);"></i>
+                    <span class="sprite-label">[ SPRITE: GAME_OVER_STATS ]</span>
+                </div>
+            </div>
+        </div>
+        <div class="nav-controls"><button class="nav-btn" onclick="prevSlide()">BACK</button><button class="nav-btn" onclick="nextSlide()">WINNER?</button></div>
+    </div>
+
+    <!-- NIVEL 4: LA SOLUCIÓN -->
+    <div class="slide" id="s5">
+        <div class="hud"><span>RESULTADO: VICTORIA</span><span>SCORE: MAX</span></div>
+        <h1>4. ¡CONTINUE? LA IA AL RESCATE</h1>
+        <div class="content-body">
+            <div class="step-tag"> END_GAME </div>
+            <div class="text-section">
+                <p style="font-size: 20px;">¿Cómo ganamos este juego? La <strong>Inteligencia Artificial</strong> está ayudando a los científicos a encontrar nuevas armas rápidamente.</p>
+                
+                <div class="interactive-element" onclick="toggleInfo('sol1')">
+                    <i class="fas fa-robot"></i><span>BUSCADORES DE FÁRMACOS</span>
+                </div>
+                <div id="sol1" class="info-popup">La IA analiza millones de moléculas en segundos para encontrar cuáles pueden destruir a los "Jefes Finales" bacterianos.</div>
+
+                <div style="background: rgba(57, 255, 20, 0.1); border: 2px solid var(--neon-green); padding: 15px; margin-top: 15px; text-align: center;">
+                    <h3 style="margin: 0;">STAGE CLEAR</h3>
+                    <p style="font-family: 'Press Start 2P'; font-size: 10px; margin-top: 10px; color: white;">DIRECTOR: DIEGO GAMEZ CUMPLIDO</p>
+                </div>
+                <button class="nav-btn" style="margin-top: 15px; width: 100%;" onclick="location.reload()">PLAY AGAIN</button>
+            </div>
+            <div class="visual-section">
+                <div class="arcade-sprite-box">
+                    <div class="scanline"></div>
+                    <i class="fas fa-trophy sprite-icon" style="color: gold;"></i>
+                    <span class="sprite-label">[ SPRITE: VICTORY_CUP ]</span>
+                </div>
+            </div>
+        </div>
+        <div class="nav-controls"><button class="nav-btn" onclick="prevSlide()">BACK</button><span style="font-family: 'Press Start 2P'; font-size: 8px; align-self: center;">CIENCIA ARCADE v4.5</span></div>
+    </div>
+</div>
+
+<script>
+    let currentSlide = 1;
+
+    function updateSlides() {
+        document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+        const activeSlide = document.getElementById('s' + currentSlide);
+        if (activeSlide) {
+            activeSlide.classList.add('active');
+        }
+        
+        // Efecto de barra de carga solo en la slide 4
+        if (currentSlide === 4) {
+            setTimeout(() => { document.getElementById('bar-ineficacia').style.width = '88%'; }, 300);
+        }
+    }
+
+    function nextSlide() { if (currentSlide < 5) { currentSlide++; updateSlides(); } }
+    function prevSlide() { if (currentSlide > 1) { currentSlide--; updateSlides(); } }
+    
+    function toggleInfo(id) {
+        const el = document.getElementById(id);
+        const isVisible = el.style.display === 'block';
+        document.querySelectorAll('.info-popup').forEach(p => p.style.display = 'none');
+        el.style.display = isVisible ? 'none' : 'block';
+    }
+
+    window.onload = updateSlides;
+</script>
+
+</body>
+</html>
